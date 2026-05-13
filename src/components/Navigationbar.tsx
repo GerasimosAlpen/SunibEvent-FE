@@ -1,17 +1,33 @@
 import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
 import { SunibLogo,PersonLogo,BellLogo } from "../assets";
+import Sidebar from "./Sidebar";
 
 function Navigationbar() {
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     return (
-        <header className="w-full py-5 px-5 flex justify-between items-center align-middle border-b-2 shadow-md mx-auto ">
-            <Link to={"/"}><img src={SunibLogo} className=""/></Link>
-            <nav className="flex gap-3 justify-center">
+        <>
+        <header className="w-full py-5 px-5 flex items-center justify-between gap-3 border-size-1 border-gray-100 shadow-sm mx-auto ">
+            {/* Hamburger menu for mobile */}
+            <button
+                className="md:hidden text-2xl pr-10 text-neutral-700 hover:text-orange-400 transition-colors"
+                onClick={() => setSidebarOpen(true)}
+            >
+                ☰
+            </button>
+
+            {/* Logo */}
+            <Link to={"/}"} className=" flex-1 md:flex-none"><img src={SunibLogo} className=""/></Link>
+            
+            {/* Desktop navigation */}
+            <nav className="hidden md:flex gap-3 justify-center flex-1">
                 <NavLink to="/" className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Home</NavLink>
                 <NavLink to={"/events"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Events</NavLink>
                 <NavLink to={"/dashboard"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Dashboard</NavLink>
                 <NavLink to={"*"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Not Found</NavLink>
             </nav>
-            <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
                 <button><img src={BellLogo}/></button>
                 <button><img src={PersonLogo}/></button>
 
@@ -23,6 +39,10 @@ function Navigationbar() {
                 </Link>
             </div>
         </header>
+        
+        {/* Mobile sidebar */}
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        </>
     )
 }
 
