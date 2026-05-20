@@ -1,3 +1,6 @@
 export {default as SunibLogo} from "./SunibLogo.svg"
 export {default as BellLogo} from "./Bell.svg"
 export {default as PersonLogo} from "./Person.svg"
+export {default as Test1} from "./test1.png"
+export {default as Test2} from "./test2.png"
+export {default as Test3} from "./test3.png"

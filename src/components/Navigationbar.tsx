@@ -31,8 +31,8 @@ function Navigationbar() {
                 <button><img src={BellLogo}/></button>
                 <button><img src={PersonLogo}/></button>
 
-                <Link to="/signin" className="text-sm text-neutral-700">
-                    Sign In
+                <Link to="/login" className="text-sm rounded-lg px-4 py-2 font-medium border-gray-400 border text-neutral-700">
+                    Login
                 </Link>
                 <Link to="/signup" className="rounded-lg bg-orange-400 px-4 py-2 text-sm font-medium text-white">
                     Sign Up
