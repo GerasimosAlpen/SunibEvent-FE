@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SunibLogo } from "../../assets";
-import { Login } from "@/API/POST";
+import { register } from "@/API/POST/Register";
 
-function Loginpage() {
+function Signup() {
     const navigate = useNavigate();
+    const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -15,11 +17,13 @@ function Loginpage() {
         setIsSubmitting(true);
         setError(null);
 
+        const trimmedName = fullName.trim();
         const trimmedEmail = email.trim();
         const trimmedPassword = password.trim();
+        const trimmedConfirmPassword = confirmPassword.trim();
 
-        if (!trimmedEmail || !trimmedPassword) {
-            setError("Email and password are required.");
+        if (!trimmedName || !trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
+            setError("All fields are required.");
             setIsSubmitting(false);
             return;
         }
@@ -30,18 +34,30 @@ function Loginpage() {
             return;
         }
 
+        if (trimmedPassword.length < 6) {
+            setError("Password must be at least 6 characters.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (trimmedPassword !== trimmedConfirmPassword) {
+            setError("Passwords do not match.");
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
-            const result = await Login(trimmedEmail, trimmedPassword);
+            const result = await register(trimmedName, trimmedEmail, trimmedPassword);
 
             if (result?.error) {
                 setError(result.error);
                 return;
             }
 
-            console.log("Login success", result);
-            navigate("/");
+            console.log("Registration success", result);
+            navigate("/login");
         } catch (submitError) {
-            setError("Unable to sign in. Please try again.");
+            setError("Unable to create account. Please try again.");
             console.error(submitError);
         } finally {
             setIsSubmitting(false);
@@ -56,9 +72,9 @@ function Loginpage() {
                 </div>
 
                 <div className="mt-4">
-                    <h1 className="text-[20px] font-semibold text-[#1e1b24]">Welcome back</h1>
+                    <h1 className="text-[20px] font-semibold text-[#1e1b24]">Create an account</h1>
                     <p className="mt-1 text-[13px] text-[#8b8793]">
-                        Login to continue to Sunib Event
+                        Join Sunib Event and discover amazing events
                     </p>
                 </div>
 
@@ -90,12 +106,23 @@ function Loginpage() {
                 </button>
 
                 <div className="relative mt-4 text-center text-[12px] text-[#9a95a4]">
-                    <span className="relative z-10 bg-white px-2">Or continue with email</span>
+                    <span className="relative z-10 bg-white px-2">Or sign up with email</span>
                     <span className="absolute left-0 top-1/2 h-px w-[38%] -translate-y-1/2 bg-[#ececf0]" />
                     <span className="absolute right-0 top-1/2 h-px w-[38%] -translate-y-1/2 bg-[#ececf0]" />
                 </div>
 
                 <form className="mt-4 flex flex-col gap-3" onSubmit={handleSubmit}>
+                    <label className="flex flex-col gap-1.5 text-[12px] text-[#6f6a78]">
+                        <span>Full name</span>
+                        <input
+                            type="text"
+                            value={fullName}
+                            onChange={(event) => setFullName(event.target.value)}
+                            placeholder="John Doe"
+                            className="rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] text-[#1f1c26] placeholder:text-[#b1adba]"
+                        />
+                    </label>
+
                     <label className="flex flex-col gap-1.5 text-[12px] text-[#6f6a78]">
                         <span>Email address</span>
                         <input
@@ -113,19 +140,32 @@ function Loginpage() {
                             type="password"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
-                            className="rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] text-[#1f1c26]"
+                            placeholder="••••••••"
+                            className="rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] text-[#1f1c26] placeholder:text-[#b1adba]"
                         />
                     </label>
 
-                    <div className="flex items-center justify-between text-[12px]">
-                        <label className="inline-flex items-center gap-1.5 text-[#8b8793]">
-                            <input type="checkbox" className="accent-[#f59f3a]" />
-                            <span>Remember me</span>
-                        </label>
+                    <label className="flex flex-col gap-1.5 text-[12px] text-[#6f6a78]">
+                        <span>Confirm password</span>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            placeholder="••••••••"
+                            className="rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] text-[#1f1c26] placeholder:text-[#b1adba]"
+                        />
+                    </label>
+
+                    <p className="text-center text-[11px] text-[#9a95a4]">
+                        By submitting the form, I agree to the{" "}
                         <a className="text-[#f59f3a] hover:underline" href="#">
-                            Forgot password?
+                            Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a className="text-[#f59f3a] hover:underline" href="#">
+                            Privacy Policy
                         </a>
-                    </div>
+                    </p>
 
                     {error ? (
                         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-600">
@@ -138,14 +178,14 @@ function Loginpage() {
                         type="submit"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? "Login in..." : "Login"}
+                        {isSubmitting ? "Creating account..." : "Create account"}
                     </button>
                 </form>
 
                 <p className="mt-4 text-center text-[12px] text-[#8b8793]">
-                    Don't have an account?
-                    <a className="ml-1 font-semibold text-[#f59f3a] hover:underline" href="/signup">
-                        Signup
+                    Already have an account?
+                    <a className="ml-1 font-semibold text-[#f59f3a] hover:underline" href="/login">
+                        Login
                     </a>
                 </p>
             </div>
@@ -153,4 +193,4 @@ function Loginpage() {
     );
 }
 
-export default Loginpage;
+export default Signup;

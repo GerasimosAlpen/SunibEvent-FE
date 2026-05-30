@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import { Home,NotFound,Events,Dashboard } from './pages'
 import Login from './pages/auth/Login'
+import Signup from './pages/auth/Signup'
 
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
     </>
