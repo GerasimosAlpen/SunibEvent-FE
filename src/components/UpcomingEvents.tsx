@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Filter from "./Filter";
 import { viewAllEvents } from "@/API/GET/ViewAll";
 import {
@@ -55,7 +56,7 @@ function EventCard({ event }: { event: any }) {
 
 /* ── main section ──────────────────────────────────────────── */
 function UpcomingEvents() {
-	const [visibleCount, setVisibleCount] = useState(4);
+	const navigate = useNavigate();
 	const [events, setEvents] = useState<any[]>([]);
 	const [featuredEvent, setFeaturedEvent] = useState<any | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ function UpcomingEvents() {
 		fetchEvents();
 	}, []);
 
-	const shownEvents = events.slice(0, visibleCount);
+	const shownEvents = events.slice(0, 4);
 
 	// Derive featured event properties safely
 	const heroImage = featuredEvent?.imageUrl || HackathonHero;
@@ -112,9 +113,9 @@ function UpcomingEvents() {
 		<section className="">
 			<div className="upcoming-section__inner">
 				{/* ─── left : filters ─── */}
-				<div className="upcoming-section__sidebar">
-					<Filter />
-				</div>
+				{/* <div className="upcoming-section__sidebar">
+					
+				</div> */}
 
 				{/* ─── right : events ─── */}
 				<div className="upcoming-section__main">
@@ -216,14 +217,14 @@ function UpcomingEvents() {
 							</div>
 
 							{/* ── load more ── */}
-							{visibleCount < events.length && (
+							{events.length > 3 && (
 								<div className="upcoming-more-wrap">
 									<button
 										className="upcoming-more-btn"
 										type="button"
-										onClick={() => setVisibleCount((c) => c + 4)}
+										onClick={() => navigate("/events")}
 									>
-										Show More Events ▾
+										View More Events ▾
 									</button>
 								</div>
 							)}
