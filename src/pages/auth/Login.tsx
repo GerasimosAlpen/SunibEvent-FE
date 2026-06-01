@@ -38,11 +38,15 @@ function Loginpage() {
                 return;
             }
 
+            // Store auth token on successful login
+            if (result?.token) {
+                localStorage.setItem("token", result.token);
+            }
+
             console.log("Login success", result);
             navigate("/");
-        } catch (submitError) {
-            setError("Unable to sign in. Please try again.");
-            console.error(submitError);
+        } catch {
+            setError("Unable to connect to server. Please try again later.");
         } finally {
             setIsSubmitting(false);
         }
