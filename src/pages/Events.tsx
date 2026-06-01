@@ -1,10 +1,13 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import { Navigationbar, Footer } from "../components";
+
 import { viewAllEvents } from "@/API/GET/ViewAll";
 
 import { Button } from "@/components/ui/button";
+
 import {
   Card,
   CardContent,
@@ -20,12 +23,14 @@ type Event = {
   location: string;
   quota: number;
   status: string;
-  registrationLink: string;
+  registrationLink: string | null;
   imageUrl: string | null;
+
   category: {
     id: number;
     name: string;
   };
+
   organization: {
     id: number;
     name: string;
@@ -33,69 +38,45 @@ type Event = {
   };
 };
 
-const categories = [
-  "All",
-  "Technology",
-  "Sports",
-  "Music",
-  "Education",
-  "Business",
-  "Arts & Culture",
-  "Health & Wellness",
-];
-
-function EventCard({ event }: Readonly<{ event: Event }>) {
+function EventCard({
+  event,
+}: Readonly<{ event: Event }>) {
   return (
-    <Card className="overflow-hidden rounded-3xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl p-0 gap-0">
-      {/* Image */}
+    <Card className="h-full flex flex-col overflow-hidden rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 p-0 gap-0">
       <div className="relative">
         <img
-          src={
-            event.imageUrl ??
-            "https://via.placeholder.com/600x400?text=No+Image"
-          }
+          src={event.imageUrl ?? "https://via.placeholder.com/600x400?text=No+Image"}
           alt={event.title}
-          className="h-56 w-full object-cover"
+          className="h-56 w-full object-cover flex-shrink-0"
         />
 
-        <div className="absolute left-4 top-4 flex gap-2">
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium shadow">
-            {event.category?.name}
-          </span>
+  {/* CATEGORY BADGE */}
+  <div className="absolute top-3 left-3">
+    <span className="bg-orange-400 text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">
+      {event.category?.name}
+    </span>
+  </div>
+</div>
 
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-medium shadow">
-            {event.status}
-          </span>
-        </div>
-      </div>
+      <CardContent className="p-5 flex-1">
+        <span className="text-sm text-orange-500 font-medium">
+          {new Date(event.datetime).toLocaleDateString()}
+        </span>
 
-      <CardContent className="p-5">
-        <p className="text-sm font-medium text-orange-500">
-          {new Date(event.datetime).toLocaleString()}
-        </p>
-
-        <h3 className="mt-3 text-xl font-bold line-clamp-2">
+        <h3 className="mt-2 text-xl font-bold line-clamp-2">
           {event.title}
         </h3>
 
-        <div className="mt-4 space-y-2 text-gray-500">
-          <p>📍 {event.location}</p>
-          <p>👥 {event.quota} attendees</p>
-        </div>
+        <p className="mt-3 text-gray-500">
+          📍 {event.location}
+        </p>
       </CardContent>
 
-      <CardFooter className="border-0 bg-transparent p-5 pt-0">
-        <Button
-          asChild
-          className="w-full rounded-2xl bg-sky-300 hover:bg-sky-400"
-        >
-          <a
-            href={event.registrationLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View Details →
-          </a>
+      <CardFooter className="border-0 bg-transparent p-5 pt-0 mt-auto">
+        <Button asChild className="w-full rounded-xl !bg-orange-400 !text-white border !border-orange-400 hover:!bg-white hover:!text-orange-400 hover:!border-orange-400 transition-all duration-300">
+          <Link to={`/events/${event.id}`}>
+            View Details
+          </Link>
         </Button>
       </CardFooter>
     </Card>
@@ -112,6 +93,9 @@ function Events() {
   const [selectedCategory, setSelectedCategory] =
     useState("All");
 
+  const [visibleCount, setVisibleCount] =
+    useState(9);
+
   useEffect(() => {
     let mounted = true;
 
@@ -119,11 +103,14 @@ function Events() {
       try {
         const res = await viewAllEvents();
 
-        if (mounted) {
-          setEvents(res?.data?.events || []);
-        }
-      } catch (err) {
-        console.error(err);
+        if (!mounted) return;
+
+        setEvents(res?.data?.events || []);
+      } catch (error) {
+        console.error(
+          "Failed to fetch events:",
+          error
+        );
       } finally {
         if (mounted) {
           setLoading(false);
@@ -138,23 +125,46 @@ function Events() {
     };
   }, []);
 
-  const filteredEvents = events.filter((event) => {
-    const matchCategory =
-      selectedCategory === "All" ||
-      event.category?.name?.toLowerCase() ===
-        selectedCategory.toLowerCase();
+  const categories = useMemo(() => {
+    return [
+      "All",
+      ...Array.from(
+        new Set(
+          events
+            .map(
+              (event) => event.category?.name
+            )
+            .filter(Boolean)
+        )
+      ),
+    ];
+  }, [events]);
 
-    const matchSearch =
-      search === "" ||
-      event.title
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      event.description
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchCategory =
+        selectedCategory === "All" ||
+        event.category?.name?.toLowerCase() ===
+          selectedCategory.toLowerCase();
 
-    return matchCategory && matchSearch;
-  });
+      const matchSearch =
+        search.trim() === "" ||
+        event.title
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        event.description
+          .toLowerCase()
+          .includes(search.toLowerCase());
+
+      return matchCategory && matchSearch;
+    });
+  }, [events, search, selectedCategory]);
+
+  const displayedEvents =
+    filteredEvents.slice(
+      0,
+      visibleCount
+    );
 
   return (
     <>
@@ -162,18 +172,19 @@ function Events() {
 
       {/* HERO */}
       <section className="bg-orange-400">
-        <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mx-auto max-w-7xl px-6 py-16 flex flex-col items-center text-center">
           <h1 className="text-5xl font-bold text-white">
             What's Happening Next?
           </h1>
 
-          <p className="mt-4 text-lg text-white/90">
-            Explore workshops, competitions, and student
-            meetups across the Sunib campus ecosystem.
+          <p className="mt-4 text-lg text-white/90 max-w-3xl mx-auto">
+            Explore workshops, competitions,
+            communities, and student activities
+            happening around campus.
           </p>
 
           <div className="mx-auto mt-10 max-w-3xl">
-            <div className="flex items-center rounded-2xl bg-white p-2 shadow-2xl">
+            <div className="flex items-center rounded-2xl bg-white p-2 shadow-xl">
               <div className="flex flex-1 items-center px-4">
                 <Search className="mr-3 h-5 w-5 text-gray-400" />
 
@@ -182,7 +193,9 @@ function Events() {
                   placeholder="Search events..."
                   value={inputValue}
                   onChange={(e) =>
-                    setInputValue(e.target.value)
+                    setInputValue(
+                      e.target.value
+                    )
                   }
                   className="w-full outline-none"
                 />
@@ -191,7 +204,10 @@ function Events() {
               <Button
                 size="lg"
                 className="rounded-xl bg-orange-400 hover:bg-orange-500"
-                onClick={() => setSearch(inputValue)}
+                onClick={() => {
+                  setSearch(inputValue);
+                  setVisibleCount(10);
+                }}
               >
                 Search
               </Button>
@@ -200,7 +216,7 @@ function Events() {
         </div>
       </section>
 
-      {/* FILTER */}
+      {/* FILTERS */}
       <section className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex flex-wrap gap-3">
           {categories.map((category) => (
@@ -211,9 +227,12 @@ function Events() {
                   ? "default"
                   : "outline"
               }
-              onClick={() =>
-                setSelectedCategory(category)
-              }
+              onClick={() => {
+                setSelectedCategory(
+                  category
+                );
+                setVisibleCount(10);
+              }}
             >
               {category}
             </Button>
@@ -221,11 +240,13 @@ function Events() {
         </div>
       </section>
 
-      {/* EVENTS */}
-      <section className="mx-auto max-w-7xl px-6">
+      {/* EVENT LIST */}
+      <section className="mx-auto max-w-7xl px-6 pb-12">
         {!loading && (
           <p className="mb-6 text-gray-500">
-            Showing {filteredEvents.length} events
+            Showing{" "}
+            {displayedEvents.length} of{" "}
+            {filteredEvents.length} events
           </p>
         )}
 
@@ -238,14 +259,32 @@ function Events() {
             No events found.
           </div>
         ) : (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {displayedEvents.map(
+                (event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                  />
+                )
+              )}
+            </div>
+
+            {visibleCount <
+              filteredEvents.length && (
+              <div className="mt-10 flex justify-center">
+                <button
+                  onClick={() =>
+                    setVisibleCount((prev) => prev + 9)
+                  }
+                  className="text-orange-400 font-medium hover:underline transition-all duration-200"
+                >
+                  Show More
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
