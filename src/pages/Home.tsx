@@ -7,8 +7,8 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel"
-import { Navigationbar } from "../components"
-import heroImage from "../assets/hero.png"
+import { Navigationbar, Footer } from "../components"
+import UpcomingEvents from "../components/UpcomingEvents"
 import { Test1, Test2, Test3 } from "@/assets"
 
 const slides = [
@@ -75,7 +75,7 @@ function Home() {
   return (
     <>
     <Navigationbar/>
-    <section className="min-h-screen flex justify-center pt-6">
+    <section className="min-h-fit flex justify-center pt-6">
       <div className="w-full max-w-7xl h-[70vh]">
         <Carousel
           orientation="vertical"
@@ -142,6 +142,12 @@ function Home() {
         </Carousel>
       </div>
     </section>
+
+    {/* ── Upcoming Events Section ── */}
+    <UpcomingEvents />
+
+    {/* ── Footer ── */}
+    <Footer />
   </>
   )
 }

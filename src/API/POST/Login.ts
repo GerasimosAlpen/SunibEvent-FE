@@ -5,6 +5,13 @@ type data = {
     password: string;
 };
 
+type LoginResponse = {
+    token?: string;
+    message?: string;
+    error?: string;
+    [key: string]: unknown;
+};
+
 export default async function Login(
     email: string,
     password: string,
@@ -23,5 +30,29 @@ export default async function Login(
         body: JSON.stringify(payload),
     });
 
-    return await res.json();
+    const data: LoginResponse = await res.json();
+
+    if (!res.ok) {
+        // Surface the server's error/message for 401, 404, etc.
+        const message =
+            data?.message || data?.error || getDefaultError(res.status);
+        return { error: message };
+    }
+
+    return data;
+}
+
+function getDefaultError(status: number): string {
+    switch (status) {
+        case 400:
+            return "Invalid request. Please check your input.";
+        case 401:
+            return "Incorrect email or password.";
+        case 404:
+            return "Account not found. Please sign up first.";
+        case 429:
+            return "Too many attempts. Please try again later.";
+        default:
+            return "Login failed. Please try again.";
+    }
 }
