@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
+import { Bell } from "lucide-react"
 import {
   Carousel,
   type CarouselApi,
@@ -10,12 +11,24 @@ import { Navigationbar, Footer } from "../components"
 import UpcomingEvents from "../components/UpcomingEvents"
 import { Test1, Test2, Test3 } from "@/assets"
 import { viewAllEvents } from "@/API/GET/ViewAll"
+import { getReminders, setReminder, removeReminder } from "@/API/ReminderAPI"
 
 function Home() {
   const navigate = useNavigate()
   const [api, setApi] = React.useState<CarouselApi>()
   const [activeSlide, setActiveSlide] = React.useState(0)
   const [slides, setSlides] = React.useState<any[]>([])
+  const [remindedIds, setRemindedIds] = React.useState<Set<number>>(new Set())
+  const [toast, setToast] = React.useState<{ message: string; type: "success" | "error" } | null>(null)
+
+  const token = localStorage.getItem("token")
+
+  React.useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
 
   React.useEffect(() => {
     const fetchSlides = async () => {
@@ -48,8 +61,51 @@ function Home() {
       }
     }
 
+    const fetchReminders = async () => {
+      if (!token) return
+      try {
+        const res = await getReminders()
+        const ids = new Set((res.data || []).map((r: any) => r.eventId))
+        setRemindedIds(ids)
+      } catch (error) {
+        console.error("Failed to fetch reminders:", error)
+      }
+    }
+
     fetchSlides()
-  }, [])
+    fetchReminders()
+  }, [token])
+
+  const handleReminderToggle = async (eventId: number) => {
+    if (!token) {
+      setToast({ message: "Please login to set reminders", type: "error" })
+      setTimeout(() => navigate("/login"), 1500)
+      return
+    }
+
+    const isReminded = remindedIds.has(eventId)
+    try {
+      if (isReminded) {
+        await removeReminder(eventId)
+        setRemindedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(eventId)
+          return next
+        })
+        setToast({ message: "Reminder removed successfully", type: "success" })
+      } else {
+        await setReminder(eventId)
+        setRemindedIds((prev) => {
+          const next = new Set(prev)
+          next.add(eventId)
+          return next
+        })
+        setToast({ message: "Reminder set successfully", type: "success" })
+      }
+    } catch (err: any) {
+      setToast({ message: err?.message || "Failed to update reminder", type: "error" })
+    }
+  }
 
   React.useEffect(() => {
     if (!api) return
@@ -133,6 +189,23 @@ function Home() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Action buttons (Reminder Bell) */}
+                    <div className="upcoming-hero__actions">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReminderToggle(slide.id);
+                        }}
+                        className={`upcoming-hero__action-btn ${
+                          remindedIds.has(slide.id) ? "text-orange-500 border-orange-500 bg-orange-50" : ""
+                        }`}
+                        title={remindedIds.has(slide.id) ? "Remove Reminder" : "Remind Me"}
+                        type="button"
+                      >
+                        <Bell className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </CarouselItem>
               ))}
@@ -169,6 +242,15 @@ function Home() {
 
     {/* ── Footer ── */}
     <Footer />
+
+    {/* Toast Notification */}
+    {toast && (
+      <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-in slide-in-from-bottom-4 duration-300 ${
+        toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+      }`}>
+        {toast.message}
+      </div>
+    )}
   </>
   )
 }
