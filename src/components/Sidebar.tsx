@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { PersonLogo } from "../assets";
 
@@ -9,6 +9,21 @@ interface SidebarProps {
 
 function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const userJson = localStorage.getItem("user");
+  const user = userJson ? JSON.parse(userJson) : null;
+  const showDashboard = token && user && (user.role === "ORGANIZATION" || user.role === "ORGANIZER" || user.role === "ADMIN");
+  const dashboardPath = user?.role === "ADMIN"
+    ? "/admin"
+    : (user?.role === "ORGANIZATION" || user?.role === "ORGANIZER" ? "/organizer" : "/dashboard");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    onClose();
+    navigate("/login");
+  };
 
   return (
     <>
@@ -17,7 +32,7 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={onClose}
-        />
+      />
       )}
 
       {/* Sidebar drawer */}
@@ -64,67 +79,82 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
             >
               Events
             </NavLink>
-            <NavLink
-              to="/dashboard"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `text-lg font-medium transition-colors ${
-                  isActive
-                    ? "text-orange-400"
-                    : "text-neutral-700 hover:text-orange-400"
-                }`
-              }
-            >
-              Dashboard
-            </NavLink>
+            {showDashboard && (
+              <NavLink
+                to={dashboardPath}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `text-lg font-medium transition-colors ${
+                    isActive
+                      ? "text-orange-400"
+                      : "text-neutral-700 hover:text-orange-400"
+                  }`
+                }
+              >
+                Dashboard
+              </NavLink>
+            )}
 
             {/* Mobile-specific items */}
-            <div className="w-full border-t border-gray-200 pt-6">
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center justify-start gap-3 w-full text-left text-lg font-medium text-neutral-700 hover:text-orange-400 transition-colors"
-              >
-                <img src={PersonLogo} alt="Profile" className="w-6 h-6" />
-                <span>Profile</span>
-              </button>
+            {token && (
+              <div className="w-full border-t border-gray-200 pt-6">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center justify-start gap-3 w-full text-left text-lg font-medium text-neutral-700 hover:text-orange-400 transition-colors"
+                >
+                  <img src={PersonLogo} alt="Profile" className="w-6 h-6" />
+                  <span>Profile</span>
+                </button>
 
-              {isProfileOpen && (
-                <div className="mt-3 pl-9 flex flex-col items-start gap-3">
-                  <Link
-                    to="/profile"
-                    onClick={onClose}
-                    className="text-left text-neutral-600 hover:text-orange-400 transition-colors"
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    to="/settings"
-                    onClick={onClose}
-                    className="text-left text-neutral-600 hover:text-orange-400 transition-colors"
-                  >
-                    Settings
-                  </Link>
-                </div>
-              )}
-            </div>
+                {isProfileOpen && (
+                  <div className="mt-3 pl-9 flex flex-col items-start gap-3">
+                    <Link
+                      to="/profile"
+                      onClick={onClose}
+                      className="text-left text-neutral-600 hover:text-orange-400 transition-colors"
+                    >
+                      My Profile
+                    </Link>
+                    <Link
+                      to="/settings"
+                      onClick={onClose}
+                      className="text-left text-neutral-600 hover:text-orange-400 transition-colors"
+                    >
+                      Settings
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Auth links at bottom */}
           <div className="w-full border-t border-gray-200 pt-6 flex flex-row gap-3">
-            <Link
-              to="/signin"
-              onClick={onClose}
-              className="w-full text-left px-4 py-2 text-neutral-700 border border-neutral-300 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              onClick={onClose}
-              className="w-full text-left px-4 py-2 bg-orange-400 text-white font-medium rounded-lg hover:bg-orange-500 transition-colors"
-            >
-              Sign Up
-            </Link>
+            {token ? (
+              <button
+                onClick={handleLogout}
+                className="w-full text-center px-4 py-2 text-neutral-700 border border-neutral-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={onClose}
+                  className="w-full text-center px-4 py-2 text-neutral-700 border border-neutral-300 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={onClose}
+                  className="w-full text-center px-4 py-2 bg-orange-400 text-white font-medium rounded-lg hover:bg-orange-500 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </aside>

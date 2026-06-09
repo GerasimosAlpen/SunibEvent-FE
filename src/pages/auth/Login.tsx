@@ -39,12 +39,23 @@ function Loginpage() {
             }
 
             // Store auth token on successful login
-            if (result?.token) {
-                localStorage.setItem("token", result.token);
+            const loginResult = result as any;
+            const token = loginResult?.data?.token || loginResult?.token;
+            let userRole = "";
+            if (token) {
+                localStorage.setItem("token", token);
+                if (loginResult?.data?.user) {
+                    localStorage.setItem("user", JSON.stringify(loginResult.data.user));
+                    userRole = loginResult.data.user.role;
+                }
             }
 
             console.log("Login success", result);
-            navigate("/");
+            if (userRole === "ADMIN") {
+                navigate("/admin");
+            } else {
+                navigate("/");
+            }
         } catch {
             setError("Unable to connect to server. Please try again later.");
         } finally {
