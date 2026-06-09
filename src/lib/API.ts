@@ -11,11 +11,19 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 };
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+	const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+	};
+	if (token) {
+		headers["Authorization"] = `Bearer ${token}`;
+	}
+
 	const res = await fetch(`${API_BASE_URL}${path}`, {
 		...options,
 		headers: {
-			"Content-Type": "application/json",
-			...(options.headers ?? {}),
+			...headers,
+			...(options.headers as Record<string, string> ?? {}),
 		},
 		body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
 	});

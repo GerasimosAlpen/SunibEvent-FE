@@ -13,7 +13,6 @@ function Footer() {
           </div>
           <div className="text-sm text-gray-500 mt-2">
             <p>© 2026 Sunib Student Portal.</p>
-            <p>The Kinetic Curator.</p>
           </div>
         </div>
 

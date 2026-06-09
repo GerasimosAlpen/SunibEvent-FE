@@ -40,8 +40,14 @@ function Signup() {
 			return;
 		}
 
-		if (trimmedPassword.length < 6) {
-			setError("Password must be at least 6 characters.");
+		if (trimmedName.length < 2) {
+			setError("Name must be at least 2 characters.");
+			setIsSubmitting(false);
+			return;
+		}
+
+		if (trimmedPassword.length < 8) {
+			setError("Password must be at least 8 characters.");
 			setIsSubmitting(false);
 			return;
 		}
@@ -55,8 +61,8 @@ function Signup() {
 		try {
 			const result = await register(trimmedName, trimmedEmail, trimmedPassword);
 
-			if (result?.error) {
-				setError(result.error);
+			if (result?.success === false || result?.error) {
+				setError(result?.message || result?.error || "Registration failed.");
 				return;
 			}
 

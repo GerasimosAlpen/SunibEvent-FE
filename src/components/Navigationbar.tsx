@@ -1,10 +1,24 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { SunibLogo,PersonLogo,BellLogo } from "../assets";
 import Sidebar from "./Sidebar";
 
 function Navigationbar() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const navigate = useNavigate();
+    const token = localStorage.getItem("token");
+    const userJson = localStorage.getItem("user");
+    const user = userJson ? JSON.parse(userJson) : null;
+    const showDashboard = token && user && (user.role === "ORGANIZATION" || user.role === "ORGANIZER" || user.role === "ADMIN");
+    const dashboardPath = user?.role === "ADMIN"
+        ? "/admin"
+        : (user?.role === "ORGANIZATION" || user?.role === "ORGANIZER" ? "/organizer" : "/dashboard");
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+    };
 
     return (
         <>
@@ -18,25 +32,41 @@ function Navigationbar() {
             </button>
 
             {/* Logo */}
-            <Link to={"/}"} className=" flex-1 md:flex-none"><img src={SunibLogo} className=""/></Link>
+            <Link to={"/"} className=" flex-1 md:flex-none"><img src={SunibLogo} className=""/></Link>
             
             {/* Desktop navigation */}
             <nav className="hidden md:flex gap-3 justify-center flex-1">
                 <NavLink to="/" className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Home</NavLink>
                 <NavLink to={"/events"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Events</NavLink>
-                <NavLink to={"/dashboard"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Dashboard</NavLink>
-                <NavLink to={"*"}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Not Found</NavLink>
+                {showDashboard && (
+                    <NavLink to={dashboardPath}  className={({ isActive }: { isActive: boolean }) => isActive ? 'text-orange-400' : 'text-neutral-700'}>Dashboard</NavLink>
+                )}
             </nav>
             <div className="hidden md:flex items-center gap-4">
-                <button><img src={BellLogo}/></button>
-                <button><img src={PersonLogo}/></button>
+                {token && (
+                    <>
+                        <button><img src={BellLogo}/></button>
+                        <button><img src={PersonLogo}/></button>
+                    </>
+                )}
 
-                <Link to="/login" className="text-sm rounded-lg px-4 py-2 font-medium border-gray-400 border text-neutral-700">
-                    Login
-                </Link>
-                <Link to="/signup" className="rounded-lg bg-orange-400 px-4 py-2 text-sm font-medium text-white">
-                    Sign Up
-                </Link>
+                {token ? (
+                    <button 
+                        onClick={handleLogout}
+                        className="text-sm rounded-lg px-4 py-2 font-medium border-gray-400 border text-neutral-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Logout
+                    </button>
+                ) : (
+                    <>
+                        <Link to="/login" className="text-sm rounded-lg px-4 py-2 font-medium border-gray-400 border text-neutral-700">
+                            Login
+                        </Link>
+                        <Link to="/signup" className="rounded-lg bg-orange-400 px-4 py-2 text-sm font-medium text-white">
+                            Sign Up
+                        </Link>
+                    </>
+                )}
             </div>
         </header>
         
