@@ -14,7 +14,7 @@ type FilterProps = {
 
 const CATEGORY_OPTIONS = ["AllCategories", "Academic", "Social", "Career"];
 const ORGANIZER_OPTIONS = ["AllOrganizers", "Student Org", "Community"];
-const EVENT_TYPES = ["Workshop", "Competition", "Seminar", "Hackathon"];
+const EVENT_TYPES = ["Workshop", "Competition", "Seminar"];
 
 function Filter({ initial, onChange }: FilterProps) {
   const [category, setCategory] = useState<string>(initial?.category ?? "AllCategories");

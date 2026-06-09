@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SunibLogo } from "../../assets";
-import { Login } from "@/API/POST";
+import { Login, redirectToGoogleAuth } from "@/API/POST";
 
 function Loginpage() {
     const navigate = useNavigate();
@@ -69,6 +69,7 @@ function Loginpage() {
                 <button
                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] font-medium text-[#2c2a33] transition hover:border-[#d1d1d9] hover:shadow-[0_4px_10px_rgba(15,15,15,0.08)]"
                     type="button"
+                    onClick={redirectToGoogleAuth}
                 >
                     <span className="inline-flex h-[18px] w-[18px]" aria-hidden="true">
                         <svg viewBox="0 0 24 24" role="presentation" className="h-full w-full">
