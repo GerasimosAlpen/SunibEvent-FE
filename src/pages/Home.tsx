@@ -10,8 +10,9 @@ import {
 import { Navigationbar, Footer } from "../components"
 import UpcomingEvents from "../components/UpcomingEvents"
 import { Test1, Test2, Test3 } from "@/assets"
+import { viewAllEvents } from "@/API/GET/ViewAll"
 
-const slides = [
+const DEFAULT_SLIDES = [
   {
     id: 1,
     eyebrow: "Featured experience",
@@ -44,6 +45,32 @@ const slides = [
 function Home() {
   const [api, setApi] = React.useState<CarouselApi>()
   const [activeSlide, setActiveSlide] = React.useState(0)
+  const [slides, setSlides] = React.useState(DEFAULT_SLIDES)
+
+  React.useEffect(() => {
+    const fetchSlides = async () => {
+      try {
+        const res = await viewAllEvents()
+        const data = res?.data?.events || []
+        
+        if (data.length > 0) {
+          const newSlides = data.slice(0, 3).map((event: any, idx: number) => ({
+            id: event.id || idx + 100,
+            eyebrow: "Upcoming Event",
+            title: event.title || "Untitled Event",
+            description: event.description || "Join us for this exciting event.",
+            cta: "View details",
+            image: event.imageUrl || [Test1, Test2, Test3][idx % 3],
+          }))
+          setSlides(newSlides)
+        }
+      } catch (error) {
+        console.error("Failed to load carousel slides:", error)
+      }
+    }
+
+    fetchSlides()
+  }, [])
 
   React.useEffect(() => {
     if (!api) return
@@ -100,7 +127,7 @@ function Home() {
                       <span className="text-sm font-medium uppercase tracking-[0.24em] text-white/70">
                         {slide.eyebrow}
                       </span>
-                      <h2 className="text-3xl leading-tight font-semibold lg:text-4xl">
+                      <h2 className="text-3xl leading-tight text-white font-semibold lg:text-4xl">
                         {slide.title}
                       </h2>
                       <p className="max-w-lg text-base leading-7 text-white/80 lg:text-lg">
