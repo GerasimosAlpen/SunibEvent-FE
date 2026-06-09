@@ -9,7 +9,7 @@ function Navigationbar() {
     const token = localStorage.getItem("token");
     const userJson = localStorage.getItem("user");
     const user = userJson ? JSON.parse(userJson) : null;
-    const showDashboard = token && user && (user.role === "ORGANIZATION" || user.role === "ORGANIZER" || user.role === "ADMIN");
+    const showDashboard = !!token && !!user;
     const dashboardPath = user?.role === "ADMIN"
         ? "/admin"
         : (user?.role === "ORGANIZATION" || user?.role === "ORGANIZER" ? "/organizer" : "/dashboard");

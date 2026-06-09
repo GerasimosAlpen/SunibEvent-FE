@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, SlidersHorizontal, Bell } from "lucide-react";
 
 import { Navigationbar, Footer } from "../components";
 import { viewAllEvents } from "@/API/GET/ViewAll";
 import { getCategories, type Category } from "@/API/GET/GetCategories";
+import { getReminders, setReminder, removeReminder } from "@/API/ReminderAPI";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
@@ -52,9 +53,15 @@ function formatEventDate(dateString: string) {
 
 function EventCard({
   event,
-}: Readonly<{ event: Event }>) {
+  isReminded,
+  onToggleReminder,
+}: Readonly<{
+  event: Event;
+  isReminded: boolean;
+  onToggleReminder: (eventId: number) => void;
+}>) {
   return (
-    <Card className="h-full flex flex-col overflow-hidden rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-0 gap-0">
+    <Card className="h-full flex flex-col overflow-hidden rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-0 gap-0 relative">
       <div className="relative aspect-video w-full overflow-hidden flex-shrink-0">
         <img
           src={event.imageUrl ?? "https://via.placeholder.com/600x400?text=No+Image"}
@@ -70,6 +77,24 @@ function EventCard({
             </span>
           </div>
         )}
+
+        {/* REMINDER BUTTON */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleReminder(event.id);
+          }}
+          className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all ${
+            isReminded 
+              ? "bg-orange-500 text-white border-orange-500" 
+              : "bg-white/90 hover:bg-white text-gray-600 border-gray-200"
+          }`}
+          title={isReminded ? "Remove Reminder" : "Remind Me"}
+          type="button"
+        >
+          <Bell className="w-4 h-4" />
+        </button>
       </div>
 
       <CardContent className="p-5 flex-1 flex flex-col gap-2.5 text-left">
@@ -103,9 +128,66 @@ function EventCard({
 }
 
 function Events() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [remindedIds, setRemindedIds] = useState<Set<number>>(new Set());
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const fetchReminders = async () => {
+      if (!token) return;
+      try {
+        const res = await getReminders();
+        const ids = new Set((res.data || []).map((r: any) => r.eventId));
+        setRemindedIds(ids);
+      } catch (error) {
+        console.error("Failed to fetch reminders:", error);
+      }
+    };
+    fetchReminders();
+  }, [token]);
+
+  const handleReminderToggle = async (eventId: number) => {
+    if (!token) {
+      setToast({ message: "Please login to set reminders", type: "error" });
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+
+    const isReminded = remindedIds.has(eventId);
+    try {
+      if (isReminded) {
+        await removeReminder(eventId);
+        setRemindedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(eventId);
+          return next;
+        });
+        setToast({ message: "Reminder removed successfully", type: "success" });
+      } else {
+        await setReminder(eventId);
+        setRemindedIds((prev) => {
+          const next = new Set(prev);
+          next.add(eventId);
+          return next;
+        });
+        setToast({ message: "Reminder set successfully", type: "success" });
+      }
+    } catch (err: any) {
+      setToast({ message: err?.message || "Failed to update reminder", type: "error" });
+    }
+  };
 
   // Filter & pagination states
   const [searchVal, setSearchVal] = useState("");
@@ -315,6 +397,8 @@ function Events() {
                     <EventCard
                       key={event.id}
                       event={event}
+                      isReminded={remindedIds.has(event.id)}
+                      onToggleReminder={handleReminderToggle}
                     />
                   ))}
                 </div>
@@ -337,6 +421,15 @@ function Events() {
       </section>
 
       <Footer />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-in slide-in-from-bottom-4 duration-300 ${
+          toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </>
   );
 }

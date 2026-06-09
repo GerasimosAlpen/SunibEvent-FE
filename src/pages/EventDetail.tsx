@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Calendar, Users, Building, Info, ArrowLeft, ExternalLink } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { Calendar, Users, Building, Info, ArrowLeft, ExternalLink, Bell } from "lucide-react";
 
 import { Navigationbar, Footer } from "../components";
 import { viewEventById } from "@/API/GET/ViewOne";
+import { getReminders, setReminder, removeReminder } from "@/API/ReminderAPI";
 
 type Event = {
   id: number;
@@ -53,9 +54,60 @@ function formatEventTimeRange(startDateString: string, endDateString: string) {
 
 function EventDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReminded, setIsReminded] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const checkReminderStatus = async () => {
+      if (!token || !id) return;
+      try {
+        const res = await getReminders();
+        const exists = (res.data || []).some((r: any) => r.eventId === Number(id));
+        setIsReminded(exists);
+      } catch (error) {
+        console.error("Failed to check reminder status:", error);
+      }
+    };
+    checkReminderStatus();
+  }, [token, id]);
+
+  const handleReminderToggle = async () => {
+    if (!token) {
+      setToast({ message: "Please login to set reminders", type: "error" });
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+
+    if (!id) return;
+    const eventId = Number(id);
+
+    try {
+      if (isReminded) {
+        await removeReminder(eventId);
+        setIsReminded(false);
+        setToast({ message: "Reminder removed successfully", type: "success" });
+      } else {
+        await setReminder(eventId);
+        setIsReminded(true);
+        setToast({ message: "Reminder set successfully", type: "success" });
+      }
+    } catch (err: any) {
+      setToast({ message: err?.message || "Failed to update reminder", type: "error" });
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -242,7 +294,18 @@ function EventDetail() {
                   <h4 className="text-sm font-bold text-gray-900 leading-tight">{event.location}</h4>
                 </div>
 
-
+                <button
+                  onClick={handleReminderToggle}
+                  className={`w-full py-3 px-4 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 uppercase tracking-wider ${
+                    isReminded
+                      ? "bg-orange-500 hover:bg-orange-600 text-white"
+                      : "bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100"
+                  }`}
+                  type="button"
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  {isReminded ? "Reminder Active" : "Remind Me"}
+                </button>
               </div>
 
             </div>
@@ -252,6 +315,15 @@ function EventDetail() {
       </main>
 
       <Footer />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-in slide-in-from-bottom-4 duration-300 ${
+          toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
