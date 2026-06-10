@@ -7,7 +7,6 @@ import {
   Users,
   Tag,
   FileText,
-  Image,
   Loader2,
   CheckCircle2,
   AlertCircle,
