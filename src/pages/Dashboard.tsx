@@ -45,6 +45,15 @@ function Dashboard() {
       return;
     }
 
+    if (user?.role === "ADMIN") {
+      navigate("/admin");
+      return;
+    }
+    if (user?.role === "ORGANIZATION" || user?.role === "ORGANIZER") {
+      navigate("/organizer");
+      return;
+    }
+
     const fetchRemindersList = async () => {
       try {
         const res = await getReminders();
@@ -58,7 +67,7 @@ function Dashboard() {
     };
 
     fetchRemindersList();
-  }, [token, navigate]);
+  }, [token, user, navigate]);
 
   const handleCancelReminder = async (e: React.MouseEvent, eventId: number) => {
     e.stopPropagation();

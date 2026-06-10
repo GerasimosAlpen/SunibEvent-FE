@@ -22,6 +22,15 @@ function Home() {
   const [toast, setToast] = React.useState<{ message: string; type: "success" | "error" } | null>(null)
 
   const token = localStorage.getItem("token")
+  const userJson = localStorage.getItem("user")
+  const user = userJson ? JSON.parse(userJson) : null
+  const isRegularUser = !user || user.role === "USER"
+
+  React.useEffect(() => {
+    if (user?.role === "ADMIN") {
+      navigate("/admin")
+    }
+  }, [user, navigate])
 
   React.useEffect(() => {
     if (toast) {
@@ -191,21 +200,23 @@ function Home() {
                     </div>
 
                     {/* Action buttons (Reminder Bell) */}
-                    <div className="upcoming-hero__actions">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReminderToggle(slide.id);
-                        }}
-                        className={`upcoming-hero__action-btn ${
-                          remindedIds.has(slide.id) ? "text-orange-500 border-orange-500 bg-orange-50" : ""
-                        }`}
-                        title={remindedIds.has(slide.id) ? "Remove Reminder" : "Remind Me"}
-                        type="button"
-                      >
-                        <Bell className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {isRegularUser && (
+                      <div className="upcoming-hero__actions">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReminderToggle(slide.id);
+                          }}
+                          className={`upcoming-hero__action-btn ${
+                            remindedIds.has(slide.id) ? "text-orange-500 border-orange-500 bg-orange-50" : ""
+                          }`}
+                          title={remindedIds.has(slide.id) ? "Remove Reminder" : "Remind Me"}
+                          type="button"
+                        >
+                          <Bell className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </CarouselItem>
               ))}

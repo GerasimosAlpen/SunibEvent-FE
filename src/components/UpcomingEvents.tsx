@@ -34,6 +34,9 @@ function EventCard({
 	onToggleReminder: (eventId: number) => void;
 }) {
 	const navigate = useNavigate();
+	const userJson = localStorage.getItem("user");
+	const user = userJson ? JSON.parse(userJson) : null;
+	const isRegularUser = !user || user.role === "USER";
 	const imageSrc = event.imageUrl || getRandomFallbackImage();
 	const title = event.title || "Untitled Event";
 	const venue = event.location || "TBA";
@@ -55,21 +58,23 @@ function EventCard({
 			<div className="upcoming-card__img-wrap relative">
 				<img src={imageSrc} alt={title} className="upcoming-card__img" />
 				
-				<button 
-					onClick={(e) => {
-						e.stopPropagation();
-						onToggleReminder(event.id);
-					}}
-					className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all ${
-						isReminded 
-							? "bg-orange-500 text-white border-orange-500" 
-							: "bg-white/90 hover:bg-white text-gray-600 border-gray-200"
-					}`}
-					title={isReminded ? "Remove Reminder" : "Remind Me"}
-					type="button"
-				>
-					<Bell className="w-4 h-4" />
-				</button>
+				{isRegularUser && (
+					<button 
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggleReminder(event.id);
+						}}
+						className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all ${
+							isReminded 
+								? "bg-orange-500 text-white border-orange-500" 
+								: "bg-white/90 hover:bg-white text-gray-600 border-gray-200"
+						}`}
+						title={isReminded ? "Remove Reminder" : "Remind Me"}
+						type="button"
+					>
+						<Bell className="w-4 h-4" />
+					</button>
+				)}
 			</div>
 			<div className="upcoming-card__body">
 				<span className="upcoming-card__date">{date}</span>
