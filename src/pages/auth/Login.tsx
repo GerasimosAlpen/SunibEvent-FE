@@ -55,6 +55,8 @@ function Loginpage() {
             console.log("Login success", result);
             if (userRole === "ADMIN") {
                 navigate("/admin");
+            } else if (userRole === "ORGANIZATION" || userRole === "ORGANIZER") {
+                navigate("/organizer");
             } else {
                 navigate("/");
             }

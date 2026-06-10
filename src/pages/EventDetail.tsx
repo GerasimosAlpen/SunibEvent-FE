@@ -62,6 +62,15 @@ function EventDetail() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const token = localStorage.getItem("token");
+  const userJson = localStorage.getItem("user");
+  const user = userJson ? JSON.parse(userJson) : null;
+  const isRegularUser = !user || user.role === "USER";
+
+  useEffect(() => {
+    if (user?.role === "ADMIN") {
+      navigate("/admin");
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (toast) {
@@ -137,8 +146,6 @@ function EventDetail() {
     };
   }, [id]);
 
-  const userJson = localStorage.getItem("user");
-  const user = userJson ? JSON.parse(userJson) : null;
   const isAdmin = user?.role === "ADMIN";
   const isOrganizer = user?.role === "ORGANIZATION" || user?.role === "ORGANIZER";
 
@@ -294,18 +301,20 @@ function EventDetail() {
                   <h4 className="text-sm font-bold text-gray-900 leading-tight">{event.location}</h4>
                 </div>
 
-                <button
-                  onClick={handleReminderToggle}
-                  className={`w-full py-3 px-4 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 uppercase tracking-wider ${
-                    isReminded
-                      ? "bg-orange-500 hover:bg-orange-600 text-white"
-                      : "bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100"
-                  }`}
-                  type="button"
-                >
-                  <Bell className="w-3.5 h-3.5" />
-                  {isReminded ? "Reminder Active" : "Remind Me"}
-                </button>
+                {isRegularUser && (
+                  <button
+                    onClick={handleReminderToggle}
+                    className={`w-full py-3 px-4 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 uppercase tracking-wider ${
+                      isReminded
+                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                        : "bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100"
+                    }`}
+                    type="button"
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    {isReminded ? "Reminder Active" : "Remind Me"}
+                  </button>
+                )}
               </div>
 
             </div>

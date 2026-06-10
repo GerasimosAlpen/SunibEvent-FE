@@ -92,6 +92,14 @@ const ConfirmModal = ({
 
 function Admin() {
   const navigate = useNavigate();
+  const userJson = localStorage.getItem("user");
+  const user = userJson ? JSON.parse(userJson) : null;
+
+  useEffect(() => {
+    if (!user || user.role !== "ADMIN") {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   // Tab State: 'posts' | 'users' | 'orgs'
   const [activeTab, setActiveTab] = useState<'posts' | 'users' | 'orgs'>('posts');

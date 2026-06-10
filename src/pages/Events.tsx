@@ -79,22 +79,29 @@ function EventCard({
         )}
 
         {/* REMINDER BUTTON */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleReminder(event.id);
-          }}
-          className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all ${
-            isReminded 
-              ? "bg-orange-500 text-white border-orange-500" 
-              : "bg-white/90 hover:bg-white text-gray-600 border-gray-200"
-          }`}
-          title={isReminded ? "Remove Reminder" : "Remind Me"}
-          type="button"
-        >
-          <Bell className="w-4 h-4" />
-        </button>
+        {(() => {
+          const userJson = localStorage.getItem("user");
+          const user = userJson ? JSON.parse(userJson) : null;
+          const isRegularUser = !user || user.role === "USER";
+          return isRegularUser && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleReminder(event.id);
+              }}
+              className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-all ${
+                isReminded 
+                  ? "bg-orange-500 text-white border-orange-500" 
+                  : "bg-white/90 hover:bg-white text-gray-600 border-gray-200"
+              }`}
+              title={isReminded ? "Remove Reminder" : "Remind Me"}
+              type="button"
+            >
+              <Bell className="w-4 h-4" />
+            </button>
+          );
+        })()}
       </div>
 
       <CardContent className="p-5 flex-1 flex flex-col gap-2.5 text-left">
@@ -136,6 +143,14 @@ function Events() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const token = localStorage.getItem("token");
+  const userJson = localStorage.getItem("user");
+  const user = userJson ? JSON.parse(userJson) : null;
+
+  useEffect(() => {
+    if (user?.role === "ADMIN") {
+      navigate("/admin");
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (toast) {
