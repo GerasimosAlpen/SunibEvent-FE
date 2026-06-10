@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { SunibLogo } from "../../assets";
 import { Login, redirectToGoogleAuth } from "@/API/POST";
 
@@ -9,6 +10,7 @@ function Loginpage() {
     const [password, setPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -125,12 +127,25 @@ function Loginpage() {
 
                     <label className="flex flex-col gap-1.5 text-[12px] text-[#6f6a78]">
                         <span>Password</span>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            className="rounded-lg border border-[#e4e4ea] bg-white px-3 py-2.5 text-[13px] text-[#1f1c26]"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(event) => setPassword(event.target.value)}
+                                className="w-full rounded-lg border border-[#e4e4ea] bg-white pl-3 pr-10 py-2.5 text-[13px] text-[#1f1c26]"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="w-4.5 h-4.5" />
+                                ) : (
+                                    <Eye className="w-4.5 h-4.5" />
+                                )}
+                            </button>
+                        </div>
                     </label>
 
                     <div className="flex items-center justify-between text-[12px]">
