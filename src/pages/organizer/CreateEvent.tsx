@@ -100,6 +100,8 @@ function CreateEvent() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   // Fetch categories on mount
   useEffect(() => {
@@ -147,6 +149,9 @@ function CreateEvent() {
               endTime: data.endtime ? formatTime(data.endtime) : '17:00',
               status: data.status || 'ONLINE',
             });
+            if (data.imageUrl) {
+              setPreviewUrl(data.imageUrl);
+            }
           }
         })
         .catch(err => {
@@ -174,6 +179,35 @@ function CreateEvent() {
     }
   };
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        showToast('Format file harus JPEG/PNG', 'error');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file maksimal 5MB', 'error');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      // Reset image URL field error if existing
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy.image_url;
+        return copy;
+      });
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setForm((prev) => ({ ...prev, image_url: '' }));
+  };
+
   const validate = (): boolean => {
     const e: FormErrors = {};
     if (!form.title.trim()) e.title = 'Judul wajib diisi';
@@ -195,11 +229,13 @@ function CreateEvent() {
       }
     }
 
-    if (form.image_url?.trim()) {
-      try {
-        new URL(form.image_url);
-      } catch {
-        e.image_url = 'URL gambar tidak valid (contoh: https://example.com/gambar-event.jpg)';
+    if (selectedFile) {
+      const allowedTypes = ['image/jpeg', 'image/png'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        e.image_url = 'Format file harus JPEG atau PNG';
+      }
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        e.image_url = 'Ukuran file maksimal 5MB';
       }
     }
     
@@ -221,16 +257,21 @@ function CreateEvent() {
         endtime: form.date && form.endTime ? new Date(form.date + "T" + form.endTime + ":00").toISOString() : new Date().toISOString(),
         location: form.location,
         quota: Number(form.capacity),
-        imageUrl: form.image_url?.trim() || undefined,
         registrationLink: form.registrationLink?.trim() || undefined,
         status: form.status,
       };
 
+      const formData = new FormData();
+      formData.append("data", JSON.stringify(backendPayload));
+      if (selectedFile) {
+        formData.append("image", selectedFile);
+      }
+
       if (id) {
-        await updateOrgEvent(id, backendPayload as unknown as CreateEventPayload);
+        await updateOrgEvent(id, formData as any);
         showToast('Event berhasil diperbarui! 🎉', 'success');
       } else {
-        await createOrgEvent(ORG_ID, backendPayload as unknown as CreateEventPayload);
+        await createOrgEvent(ORG_ID, formData as any);
         showToast('Event berhasil dibuat! 🎉', 'success');
       }
       setTimeout(() => navigate('/organizer/posts'), 1500);
@@ -584,54 +625,53 @@ function CreateEvent() {
             </div>
 
             <Field
-              label="URL Gambar"
-              icon={<Image className="w-3.5 h-3.5" />}
+              label="Upload Gambar"
+              icon={<Upload className="w-3.5 h-3.5" />}
               error={errors.image_url}
             >
-              <input
-                type="url"
-                value={form.image_url}
-                onChange={e => set('image_url', e.target.value)}
-                placeholder="https://example.com/gambar-event.jpg"
-                className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl text-sm text-gray-800
-                  placeholder-gray-400 focus:outline-none focus:ring-2 focus:bg-white transition-all
-                  ${errors.image_url
-                    ? 'border-red-300 focus:ring-red-400/30'
-                    : 'border-gray-200 focus:ring-orange-400/40 focus:border-orange-300'}`}
-              />
-            </Field>
-
-            {/* Preview */}
-            {form.image_url && (
-              <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50 aspect-video">
-                <img
-                  src={form.image_url}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={e => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/jpeg, image/png"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="event-image-upload"
                 />
-                <button
-                  type="button"
-                  onClick={() => set('image_url', '')}
-                  className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full
-                    bg-black/40 text-white hover:bg-black/60 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-                <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/40 rounded-md text-[10px] text-white backdrop-blur-sm">
-                  Preview
-                </div>
+                
+                {previewUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50 aspect-video">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full
+                        bg-black/50 text-white hover:bg-black/70 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/40 rounded-md text-[10px] text-white backdrop-blur-sm">
+                      {selectedFile ? 'Preview Baru' : 'Gambar Sekarang'}
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="event-image-upload"
+                    className="flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 cursor-pointer hover:bg-orange-50/20 hover:border-orange-200 transition-colors"
+                  >
+                    <Upload className="w-6 h-6 text-gray-300" />
+                    <p className="text-xs font-semibold">Klik untuk memilih file gambar</p>
+                    <p className="text-[10px] text-gray-400">JPEG atau PNG (Max 5MB)</p>
+                  </label>
+                )}
               </div>
-            )}
-
-            {!form.image_url && (
-              <div className="flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-200 rounded-xl text-gray-400">
-                <Upload className="w-6 h-6 text-gray-300" />
-                <p className="text-xs">Tempel URL gambar di atas untuk melihat preview</p>
-              </div>
-            )}
+            </Field>
           </div>
 
           {/* ─── Actions ─── */}

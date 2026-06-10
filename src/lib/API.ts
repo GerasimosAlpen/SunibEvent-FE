@@ -12,9 +12,10 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
 	const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
+	const headers: Record<string, string> = {};
+	if (!(options.body instanceof FormData)) {
+		headers["Content-Type"] = "application/json";
+	}
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
 	}
@@ -25,7 +26,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 			...headers,
 			...(options.headers as Record<string, string> ?? {}),
 		},
-		body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+		body: options.body instanceof FormData 
+			? options.body 
+			: (options.body !== undefined ? JSON.stringify(options.body) : undefined),
 	});
 
 	let data: unknown;
