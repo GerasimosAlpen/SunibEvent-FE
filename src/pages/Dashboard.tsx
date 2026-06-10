@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Calendar, MapPin, BellOff, ArrowRight, Clock, Users, Building, Trash2 } from "lucide-react";
+import { Calendar, MapPin, BellOff, ArrowRight, Clock, Building, Trash2 } from "lucide-react";
 import { Navigationbar, Footer } from "../components";
 import { getReminders, removeReminder, type Reminder } from "@/API/ReminderAPI";
 
